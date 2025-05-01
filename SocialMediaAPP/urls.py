@@ -23,4 +23,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    path('Postzy/UserRegistration/',UserRegistrationView.as_view(),name='signup'),
+    path('Postzy/SignUPOTPconfirm/',RegistrationOTPConfirmView.as_view(),name='register_otp_confirm'),
+    path('Postzy/ResentOTP_REG/',ResendOTPRegistratioinView.as_view(),name='resent'),
+
+    path('Postzy/login/',TokenObtainPairView.as_view,name='login'),
+    path('Postzy/token_refresh/',TokenRefreshView.as_view(),name='token_refresh'),
 ]

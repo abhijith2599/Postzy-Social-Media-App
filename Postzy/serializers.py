@@ -4,34 +4,23 @@ from django.contrib.auth import get_user_model    # use to get the customeuser m
 
 User = get_user_model()
 
-class UserRegisterSerializer(serializers.Serializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
+
+    confirm_password = serializers.CharField(write_only=True)     # declaring cnf_pass as a element so field don't throw error
 
     class Meta:
 
         model = User
 
-        fields = ['username','fullname','password','email','phone_number']
+        fields = ['username','fullname','password','email','phone_number','confirm_password']
 
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'email':{'required':True},
+            'username':{'required':True}
+        }
 
-    #     extra_kwargs = {
-    #         'password': {'write_only': True}
-    #     }
-
-    # def create(self, validated_data):
-    #     user = CustomUser(
-    #         username=validated_data['username'],
-    #         email=validated_data['email'],
-    #         fullname=validated_data['fullname'],
-    #         phone_number=validated_data['phone_number'],
-    #     )
-    #     user.set_password(validated_data['password'])
-    #     user.save()
-    #     return user
-
-
-
-    #       extra_kwargs = {'password': {'write_only': True}}
-    
-    # def create(self, validated_data):
-    #     user = User.objects.create_user(**validated_data)
-    #     return user
+    def validate(self, attrs):       # conf_pass is not in model , so telling django it's manually added and don't throw error
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("Password donot match")
+        return attrs
