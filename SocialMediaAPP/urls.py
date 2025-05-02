@@ -26,7 +26,12 @@ urlpatterns = [
 
     path('Postzy/UserRegistration/',UserRegistrationView.as_view(),name='signup'),
     path('Postzy/SignUPOTPconfirm/',RegistrationOTPConfirmView.as_view(),name='register_otp_confirm'),
-    path('Postzy/ResentOTP_REG/',ResendOTPRegistratioinView.as_view(),name='resent'),
+    path('Postzy/ResentOTP_REG/',ResendOTPRegistrationView.as_view(),name='resent_otp'),
+
+    path('Postzy/login/',CustomeLoginView.as_view(),name='login'),
+    # path('Postzy/normal/login/',TokenObtainPairView.as_view(),name='normal_login'),
+    path('Postzy/logout/',LogOutView.as_view(),name='logout'),
+    path('Postzy/TokenRefresh/',TokenRefreshView.as_view(),name='token_refresh'),
 
     path('Postzy/login/',TokenObtainPairView.as_view,name='login'),
     path('Postzy/token_refresh/',TokenRefreshView.as_view(),name='token_refresh'),

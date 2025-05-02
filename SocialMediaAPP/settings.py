@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Postzy',
+
     # Third-party apps  - extra added
+
     'rest_framework',
     'rest_framework_simplejwt',   # login and JWT refresh
-    # 'rest_framework_simplejwt.token_blacklist',    # logout
+    'rest_framework_simplejwt.token_blacklist',    # logout
     'corsheaders',
     'allauth',
     'allauth.account',
@@ -139,6 +142,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 
+# SMTP Validation
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
@@ -157,11 +161,34 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # extra added
 CORS_ALLOW_ALL_ORIGINS = True  # Or specify origins using CORS_ALLOWED_ORIGINS
 
+
+# For JWT Token usage
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
+
+# For blacklisting
+
+SIMPLE_JWT = {
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),      # default is 5 minutes
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),         # default is 1 day
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

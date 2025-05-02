@@ -5,12 +5,13 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 import random
+from datetime import datetime,timedelta
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated,AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken   # For logout blacklisting
+from rest_framework_simplejwt.tokens import RefreshToken,TokenError  # For logout blacklisting
 
 from .serializers import *
 from .models import *
@@ -34,7 +35,6 @@ class UserRegistrationView(APIView):    # For registering User to App
         data.pop('confirm_password',None)    # removing conf_pass (optional)
 
         # if data['password'] != data['confirm_password']:
-
         #     return Response({"Error":"Passwords doen't match. Try again"},status=status.HTTP_406_NOT_ACCEPTABLE)
         
         if User.objects.filter(email = data['email']).exists():
@@ -52,7 +52,7 @@ class UserRegistrationView(APIView):    # For registering User to App
         }
 
         request.session['otp'] = otp
-
+        request.session['otp_created_time'] = datetime.now().isoformat()    # saving timestamp as iso string
         request.session.set_expiry(300)   # expire in 5 minutes 
 
         sent = send_mail(
@@ -100,23 +100,44 @@ class RegistrationOTPConfirmView(APIView):
         
         return Response({"Error":"User registration Unsucessfull, please try again."},status=status.HTTP_400_BAD_REQUEST)
     
-class ResendOTPRegistratioinView(APIView):
+
+class ResendOTPRegistrationView(APIView):
 
     permission_classes = [AllowAny]
 
     def post(self,request):
 
         registration_data = request.session.get('registration_data')
-
         if not registration_data:
             return Response({"Error":"User Registration details not found or timer expired, Please register again"},status=status.HTTP_400_BAD_REQUEST)
         
+
         to_mail = registration_data.get('email')
         if not to_mail:
             return Response({"Error":"Email not found, Please try to register again"},status=status.HTTP_400_BAD_REQUEST)
         
+
+        otp_created_str = request.session.get('otp_created_time')
+        if otp_created_str:
+            otp_created_time = datetime.fromisoformat(otp_created_str)  # conv the string back to timer obj
+            now = datetime.now()
+            diff = now - otp_created_time
+
+            if diff < timedelta(minutes=2):
+                # calculating seconds remaining
+                seconds_remaining = int((timedelta(minutes=2) - diff).total_seconds())
+                return Response({
+                    "error": "Please wait before resending OTP.",
+                    "seconds_remaining": seconds_remaining
+                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        else:
+            return Response({"error": "OTP timestamp missing. Please register again."}, status=status.HTTP_400_BAD_REQUEST)
+
+
         otp = random.randint(100000,999999)
         request.session['otp'] = otp
+        request.session['otp_created_time'] = datetime.now().isoformat()
+
         request.session.set_expiry(300)
 
         sent = send_mail(
@@ -130,18 +151,37 @@ class ResendOTPRegistratioinView(APIView):
         if sent:
             return Response({"Success":"OTP resent sucessfully"},status=status.HTTP_200_OK)
         else:
-            return Response({"Error":"Failed to send OTP. Try again Later"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":"Failed to send OTP. Try again Later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-# class LogOutView(APIView):
+class LogOutView(APIView):
 
-#     permission_classes =[IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-#     def post(self,request):
-#         try:
-#             refresh = request.data.get('refresh_tokoen')
-#             token = RefreshToken(refresh)
-#             token.blacklist()
-#             return Response("Logged out",status=status.HTTP_205_RESET_CONTENT)
-#         except:
-#             return Response(status=status.HTTP_400_BAD_REQUEST)
+    def post(self,request):
+
+        try:
+            refresh_token = request.data.get('refresh_token')    # pass it as json input
+
+            if refresh_token is None:
+                return Response({"Error":"Refresh Token Missing. Try Again"},status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"success": "Logged out successfully"},status=status.HTTP_205_RESET_CONTENT)
+        
+        except TokenError:
+            return Response({"Error":"Invalid Token"},status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomeLoginView(APIView):
+
+    def post(self,request):
+
+        serializer = CustomTokenObtainPairSerializer(data = request.data)
+
+        if serializer.is_valid():
+
+            return Response(serializer.validated_data,status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)     # this .errros help to output "raise" errors
