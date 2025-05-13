@@ -59,6 +59,13 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError({"disabled error":"User account is disabled"})
         
+        if user.is_logged_in:
+            raise serializers.ValidationError({"User Error":"User already logged in"})
+        
+        # marking user as logged_in
+        user.is_logged_in = True   
+        user.save(update_fields=['is_logged_in'])
+
         refresh = RefreshToken.for_user(user)     # generating token for the user logging in
 
         return{
@@ -68,3 +75,14 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
             "username":user.username,
             "email":user.email
         }
+    
+
+class CompleteProfileSerializer(serializers.Serializer):
+
+    phone_number = serializers.CharField(max_length = 10)
+
+    def validate_phone_number(self,value):
+
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError("Invalid Phone Number")
+        return value

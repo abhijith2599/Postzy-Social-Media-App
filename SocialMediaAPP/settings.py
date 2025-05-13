@@ -44,13 +44,14 @@ INSTALLED_APPS = [
     # Third-party apps  - extra added
 
     'rest_framework',
-    'rest_framework_simplejwt',   # login and JWT refresh
-    'rest_framework_simplejwt.token_blacklist',    # logout
-    'corsheaders',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',  # Google login
+    'rest_framework_simplejwt',                     # login and JWT refresh
+    'rest_framework_simplejwt.token_blacklist',     # logout
+    'corsheaders',                                  # when requesting from another frontend(react), esnures request aren't blocked
+    'allauth',                                      # for all authentication like google ,FB
+    'allauth.account',                              # handle acnt rel features
+    'allauth.socialaccount',                        # enavle social login through OAuth providers
+    'allauth.socialaccount.providers.google',       # provide G OAuth support
+    # 'dj_rest_auth',                                 # Makes OAuth work with Django REST API
 ]
 
 MIDDLEWARE = [
@@ -171,7 +172,6 @@ REST_FRAMEWORK = {
 
 
 # For blacklisting
-
 SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'BLACKLIST_AFTER_ROTATION': True,
@@ -189,11 +189,41 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-
+# For django-allauth
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
 SITE_ID = 1
+
 LOGIN_REDIRECT_URL = '/'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': '438011631489-97jat3toe0nveqtgorphsss2ced70nkd.apps.googleusercontent.com',
+            'secret': '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',
+            'key': ''
+        }
+    }
+}
+
+
+# Mail check when google signup
+
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_QUERY_EMAIL = True
+ACCOUNT_UNIQUE_EMAIL = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+
+
+# adapters.py 
+
+ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'Postzy.adapters.CustomSocialAccountAdapter'

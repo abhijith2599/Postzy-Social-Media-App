@@ -159,19 +159,24 @@ class LogOutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self,request):
+        
+        refresh_token = request.data.get('refresh_token')    # pass it as json input
+        
+        if refresh_token is None:
+            return Response({"Error":"Refresh Token Missing. Try Again"},status=status.HTTP_400_BAD_REQUEST)
+        
+        # marking user as logged_out
+        user = request.user
+        user.is_logged_in = False
+        user.save(update_fields=['is_logged_in'])
 
         try:
-            refresh_token = request.data.get('refresh_token')    # pass it as json input
-
-            if refresh_token is None:
-                return Response({"Error":"Refresh Token Missing. Try Again"},status=status.HTTP_400_BAD_REQUEST)
-
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response({"success": "Logged out successfully"},status=status.HTTP_205_RESET_CONTENT)
         
         except TokenError:
-            return Response({"Error":"Invalid Token"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":"Invalid or Expiredd Token"},status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomeLoginView(APIView):
@@ -185,3 +190,36 @@ class CustomeLoginView(APIView):
             return Response(serializer.validated_data,status=status.HTTP_200_OK)
         
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)     # this .errros help to output "raise" errors
+    
+    
+class CompleteProfileView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request):
+
+        serializer = CompleteProfileSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+
+        request.user.phone_number = serializer.validated_data['phone_number']
+        request.user.save()
+
+        return Response({"Success":"Phone number updated sucessfully"})
+
+
+
+
+
+
+
+
+#               to see which user is active
+# class WhoAmIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         return Response({
+#             "id": request.user.id,
+#             "username": request.user.username,
+#             "email": request.user.email,
+#         })

@@ -9,12 +9,16 @@ class CustomUser(AbstractUser):
 
     phone_number = models.CharField(max_length=10,
                                      unique=True,
-                                     validators=[RegexValidator(r'^[0-9]{10}$','Enter a Valid 10 Digit Phone Number')]  # r - rawstring
+                                     validators=[RegexValidator(r'^[0-9]{10}$','Enter a Valid 10 Digit Phone Number')],  # r - rawstring
+                                    null=True,
+                                    blank=True
                                     )
 
     fullname = models.CharField(max_length=150)
 
     email = models.EmailField(unique=True)
+
+    is_logged_in = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username

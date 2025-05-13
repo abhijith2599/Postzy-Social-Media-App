@@ -19,6 +19,7 @@ from django.urls import path
 
 from Postzy.views import *
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
+from django.urls import path,include
 
 
 urlpatterns = [
@@ -29,10 +30,14 @@ urlpatterns = [
     path('Postzy/ResentOTP_REG/',ResendOTPRegistrationView.as_view(),name='resent_otp'),
 
     path('Postzy/login/',CustomeLoginView.as_view(),name='login'),
-    # path('Postzy/normal/login/',TokenObtainPairView.as_view(),name='normal_login'),
+    path('Postzy/normal/login/',TokenObtainPairView.as_view(),name='normal_login'),
     path('Postzy/logout/',LogOutView.as_view(),name='logout'),
     path('Postzy/TokenRefresh/',TokenRefreshView.as_view(),name='token_refresh'),
 
-    path('Postzy/login/',TokenObtainPairView.as_view,name='login'),
-    path('Postzy/token_refresh/',TokenRefreshView.as_view(),name='token_refresh'),
+    # Google OAuth URL
+    path('Postzy/accounts/', include("allauth.urls")),
+    path('Postzy/complete-profile/',CompleteProfileView.as_view(),name='complete_profile')
+    # path('Postzy/whoami/', WhoAmIView.as_view(), name='whoami'),
+
+
 ]
