@@ -27,8 +27,8 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
 
         # Set email and full_name
         user_email(user, data.get('email') or '')
-        full_name = (data.get('name') or '') or (data.get('username') or '')
-        user_field(user, 'full_name', full_name)
+        full_name = (data.get('name') or '') or (data.get('username') or '') or (data.get('first_name') or '') + ' ' + (data.get('last_name') or '')
+        user_field(user, 'fullname', full_name)
 
         # Generate unique username
         base_username = slugify(data.get('email').split('@')[0])

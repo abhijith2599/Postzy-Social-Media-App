@@ -36,7 +36,8 @@ urlpatterns = [
 
     # Google OAuth URL
     path('Postzy/accounts/', include("allauth.urls")),
-    path('Postzy/complete-profile/',CompleteProfileView.as_view(),name='complete_profile')
+    path('Postzy/complete-profile/',CompleteProfileView.as_view(),name='complete_profile'),
+    path('auth/google/',GoogleOAuth2LoginAPIView.as_view(),name='google-login'),
     # path('Postzy/whoami/', WhoAmIView.as_view(), name='whoami'),
 
 

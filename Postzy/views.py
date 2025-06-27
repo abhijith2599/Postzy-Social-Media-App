@@ -11,7 +11,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated,AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken,TokenError  # For logout blacklisting
+from rest_framework_simplejwt.tokens import RefreshToken  # For logout blacklisting
+from rest_framework_simplejwt.exceptions import TokenError
+
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.helpers import complete_social_login
+from allauth.socialaccount.models import SocialAccount
+from allauth.socialaccount.providers.oauth2.client import OAuth2Error
+from allauth.socialaccount.providers.google.provider import GoogleProvider
+from allauth.socialaccount.adapter import get_adapter
+from allauth.account.utils import user_email
+
 
 from .serializers import *
 from .models import *
@@ -192,9 +202,9 @@ class CustomeLoginView(APIView):
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)     # this .errros help to output "raise" errors
     
     
-class CompleteProfileView(APIView):
+class CompleteProfileView(APIView):     # after OAuth SignUp
 
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self,request):
 
@@ -207,7 +217,44 @@ class CompleteProfileView(APIView):
         return Response({"Success":"Phone number updated sucessfully"})
 
 
+class GoogleOAuth2LoginAPIView(APIView):
 
+    def post(self,request):
+
+        access_token = request.data.get("access_token")
+        if not access_token:
+            return Response({"error": "Access token is required"}, status=400)
+
+        # Create a dummy request for allauth to process
+        try:
+            adapter = GoogleOAuth2Adapter()
+            token = adapter.parse_token({'access_token': access_token})
+            token.app = adapter.get_provider().get_app(request)
+            login = adapter.complete_login(request, app=token.app, token=token)
+            login.token = token
+            complete_social_login(request, login)
+        except OAuth2Error as e:
+            return Response({"error": "OAuth2 error", "details": str(e)}, status=400)
+
+        user = login.account.user
+
+        if not user.is_active:
+            return Response({"error": "User account is inactive"}, status=400)
+
+        # JWT token generation
+        refresh = RefreshToken.for_user(user)
+        response_data = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": getattr(user, 'full_name', ''),
+                "phone_number": getattr(user, 'phone_number', None),
+            }
+        }
+
+        return Response(response_data, status=200)
 
 
 
